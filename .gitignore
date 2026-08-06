@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local downloaded media files
+*.mp4
+*.mp3
+*.jpg
+*.jpeg
+*.png
+*.zip
+
+# IDE configurations
+.vscode/
+.idea/
+.venv/
+venv/
+env/
