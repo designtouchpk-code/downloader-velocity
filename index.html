@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velocity - Media Downloader</title>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <h1 id="logo" class="logo">Velocity</h1>
+            <div id="connection-status" class="connection-status">
+                <span class="status-indicator-dot online"></span>
+                <span class="status-text">Server Online</span>
+            </div>
+        </header>
+
+        <!-- MAIN TABS CONTAINER -->
+        <div class="tabs-container">
+            <nav class="tab-selectors" role="tablist">
+                <button id="tab-btn-downloader" class="tab-btn active" role="tab" aria-selected="true" onclick="switchMainTab('downloader')">📥 Downloader</button>
+                <button id="tab-btn-settings" class="tab-btn" role="tab" aria-selected="false" onclick="switchMainTab('settings')">⚙️ Settings</button>
+                <button id="tab-btn-logs" class="tab-btn" role="tab" aria-selected="false" onclick="switchMainTab('logs')">📊 Activity Log</button>
+            </nav>
+
+            <!-- TAB CONTENT: DOWNLOADER -->
+            <div id="tab-content-downloader" class="tab-content active" role="tabpanel">
+                <!-- Platform Selector -->
+                <div class="selector-wrapper">
+                    <div id="platform-selector" class="segmented-control">
+                        <button id="platform-btn-yt" class="seg-btn active" onclick="switchPlatform('youtube')">🔴 YouTube Mode</button>
+                        <button id="platform-btn-ig" class="seg-btn" onclick="switchPlatform('instagram')">📸 Instagram Mode</button>
+                    </div>
+                </div>
+
+                <!-- Category Selector -->
+                <div class="selector-wrapper">
+                    <div id="category-selector" class="segmented-control category-choices">
+                        <!-- Dynamic Buttons Loaded by JS -->
+                    </div>
+                </div>
+
+                <!-- URL Input Card -->
+                <section class="card input-card">
+                    <div class="input-row">
+                        <input id="url-input" type="text" placeholder="Paste YouTube link here..." aria-label="Media URL">
+                        <button id="analyze-btn" class="btn btn-primary" onclick="analyzeUrl()">Analyze URL</button>
+                    </div>
+                </section>
+
+                <!-- Metadata Preview Card (Hidden by default) -->
+                <section id="preview-card" class="card preview-card hidden">
+                    <div class="preview-layout">
+                        <!-- Left Side: Thumbnail Preview -->
+                        <div class="preview-left">
+                            <div id="preview-thumbnail" class="thumbnail-placeholder">
+                                Metadata Preview
+                            </div>
+                            <div class="save-folder-box">
+                                <span id="save-path-lbl">Save path: Browser Downloads</span>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Info & Controls -->
+                        <div class="preview-right">
+                            <h2 id="media-title" class="media-title">Title</h2>
+                            <p id="media-channel" class="media-channel">Channel: -</p>
+                            <p id="media-duration" class="media-duration">Duration: -</p>
+
+                            <!-- Format & Quality (Shown conditionally) -->
+                            <div id="stream-options-row" class="options-row">
+                                <div class="option-field">
+                                    <label for="format-select">Format:</label>
+                                    <select id="format-select" class="dropdown" onchange="adjustFormatOptions()">
+                                        <option value="MP4">MP4</option>
+                                        <option value="MP3">MP3</option>
+                                    </select>
+                                </div>
+                                <div class="option-field">
+                                    <label for="quality-select">Res:</label>
+                                    <select id="quality-select" class="dropdown">
+                                        <option value="1080p">1080p</option>
+                                        <option value="720p" selected>720p</option>
+                                        <option value="480p">480p</option>
+                                        <option value="360p">360p</option>
+                                        <option value="Best Audio">Best Audio</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Actions Row -->
+                            <div class="action-btn-row">
+                                <button id="download-btn" class="btn btn-primary btn-block" onclick="startDownload()">Download Video</button>
+                            </div>
+
+                            <!-- Progress Panel -->
+                            <div id="progress-panel" class="progress-panel hidden">
+                                <div class="progress-bar-container">
+                                    <div id="progress-bar-fill" class="progress-bar-fill"></div>
+                                </div>
+                                <div class="progress-metrics">
+                                    <span id="metric-pct" class="metric-pct">0%</span>
+                                    <span id="metric-speed" class="metric-speed">Speed: -</span>
+                                    <span id="metric-eta" class="metric-eta">ETA: -</span>
+                                    <span id="metric-size" class="metric-size">Size: -</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Dynamic Item Checklist Slides Grid (Hidden by default) -->
+                <section id="picker-card" class="card picker-card hidden">
+                    <div class="picker-header">
+                        <h3>Detected Media Slides</h3>
+                        <div class="picker-actions">
+                            <button id="select-all-btn" class="btn btn-secondary btn-sm" onclick="toggleAllSlides(true)">Select All</button>
+                            <button id="deselect-all-btn" class="btn btn-secondary btn-sm" onclick="toggleAllSlides(false)">Deselect All</button>
+                        </div>
+                    </div>
+                    <div id="picker-scroll-container" class="picker-scroll">
+                        <!-- Checkboxes inserted here dynamically -->
+                    </div>
+                    <div class="zip-config-row">
+                        <label for="zip-select">Download Method:</label>
+                        <select id="zip-select" class="dropdown">
+                            <option value="separate">Save as Separate Files</option>
+                            <option value="zip">Pack into single ZIP Archive</option>
+                        </select>
+                    </div>
+                </section>
+            </div>
+
+            <!-- TAB CONTENT: SETTINGS -->
+            <div id="tab-content-settings" class="tab-content" role="tabpanel">
+                <section class="card settings-card">
+                    <h2>Diagnostics & Options</h2>
+                    <div class="settings-list">
+                        <!-- FFmpeg Status -->
+                        <div class="settings-item">
+                            <span class="settings-label">FFmpeg Encoder Status:</span>
+                            <span id="ffmpeg-badge" class="badge badge-success">Local Host Dependent</span>
+                        </div>
+                        <!-- Appearance Theme -->
+                        <div class="settings-item">
+                            <span class="settings-label">Interface Appearance Theme:</span>
+                            <select id="theme-select" class="dropdown" onchange="changeTheme()">
+                                <option value="dark" selected>Dark</option>
+                                <option value="light">Light</option>
+                            </select>
+                        </div>
+                        <!-- Path Configurations -->
+                        <div class="settings-item vertical">
+                            <span class="settings-label">Configuration Folder Path:</span>
+                            <div class="path-input-row">
+                                <span id="path-settings-lbl" class="path-text">Browser Downloads Folder (System Managed)</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- TAB CONTENT: ACTIVITY LOGS -->
+            <div id="tab-content-logs" class="tab-content" role="tabpanel">
+                <section class="card logs-card">
+                    <h2>Activity Debug Logs</h2>
+                    <div id="console-output" class="console-box" aria-live="polite">
+                        [00:00:00] Velocity web network diagnostics initialized.
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- FOOTER BAR -->
+        <footer class="app-footer-bar">
+            <span id="footer-dot" class="status-dot">●</span>
+            <span id="footer-status-text" class="status-bar-text">System Online | Awaiting Pipeline Target...</span>
+        </footer>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
