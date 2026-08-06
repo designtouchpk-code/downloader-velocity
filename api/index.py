@@ -77,6 +77,32 @@ async def analyze_url(req_data: AnalyzeRequest):
     if not url:
         raise HTTPException(status_code=400, detail="URL cannot be empty")
 
+    import urllib.parse
+    import json
+
+    # Hybrid OEmbed resolution for YouTube to prevent bot block challenges
+    if "youtube.com" in url or "youtu.be" in url:
+        try:
+            oembed_url = f"https://www.youtube.com/oembed?url={urllib.parse.quote(url)}&format=json"
+            req = urllib.request.Request(oembed_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'})
+            with urllib.request.urlopen(req, timeout=3) as res:
+                data = json.loads(res.read().decode('utf-8'))
+                title = data.get('title', 'YouTube Video')
+                channel = data.get('author_name', 'YouTube Channel')
+                thumbnail_url = data.get('thumbnail_url')
+                thumbnail_base64 = get_thumbnail_base64(thumbnail_url)
+                
+                return {
+                    "title": title,
+                    "channel": channel,
+                    "duration": "Duration loaded on download",
+                    "thumbnail": thumbnail_base64,
+                    "entries": [],
+                    "original_url": url
+                }
+        except Exception as oembed_err:
+            print(f"OEmbed failed: {oembed_err}, falling back to yt-dlp")
+
     # Instagram username normalization
     if category == "👤 Profile Pic" and not url.startswith("http"):
         username = url.lstrip("@").strip()
@@ -90,6 +116,16 @@ async def analyze_url(req_data: AnalyzeRequest):
         'check_formats': False,
         'youtube_include_dash_manifest': False,
         'youtube_include_hls_manifest': False,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+        },
+        'extractor_args': {
+            'youtube': {
+                'client': ['ios', 'android', 'tvhtml5', 'web_creator']
+            }
+        }
     }
 
     try:
@@ -178,6 +214,16 @@ async def download_media(url: str, format: str = "MP4", quality: str = "720p"):
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+        },
+        'extractor_args': {
+            'youtube': {
+                'client': ['ios', 'android', 'tvhtml5', 'web_creator']
+            }
+        }
     }
     
     if "youtube.com" in url or "youtu.be" in url:
