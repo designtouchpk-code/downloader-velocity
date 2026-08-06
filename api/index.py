@@ -13,6 +13,30 @@ import yt_dlp
 
 app = FastAPI(title="Velocity API")
 
+from fastapi import Request
+
+@app.middleware("http")
+async def log_and_normalize_path(request: Request, call_next):
+    path = request.url.path
+    print(f"[VELOCITY-ROUTER] Incoming Request: {request.method} {path}")
+    
+    normalized_path = path
+    if "api/index.py" in path:
+        subpath = path.split("api/index.py")[-1]
+        if subpath == "":
+            normalized_path = "/"
+        elif not subpath.startswith("/api") and subpath.startswith("/"):
+            normalized_path = "/api" + subpath
+        else:
+            normalized_path = subpath
+            
+    if normalized_path != path:
+        print(f"[VELOCITY-ROUTER] Normalizing route {path} -> {normalized_path}")
+        request.scope["path"] = normalized_path
+
+    response = await call_next(request)
+    return response
+
 # Allow CORS for local debug states
 app.add_middleware(
     CORSMiddleware,
@@ -45,6 +69,7 @@ def get_thumbnail_base64(url: str) -> str:
         return None
 
 @app.post("/api/analyze")
+@app.post("/analyze")
 async def analyze_url(req_data: AnalyzeRequest):
     url = req_data.url.strip()
     category = req_data.category
@@ -120,6 +145,7 @@ async def analyze_url(req_data: AnalyzeRequest):
     }
 
 @app.get("/api/download")
+@app.get("/download")
 async def download_media(url: str, format: str = "MP4", quality: str = "720p"):
     if not url:
         raise HTTPException(status_code=400, detail="Missing URL parameter")
