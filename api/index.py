@@ -201,6 +201,26 @@ async def download_media(url: str, format: str = "MP4", quality: str = "720p"):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-# Mount static files ONLY when running locally (not on Vercel)
-if not os.environ.get("VERCEL"):
-    app.mount("/", StaticFiles(directory=".", html=True), name="static")
+from fastapi.responses import HTMLResponse, FileResponse
+
+@app.get("/", response_class=HTMLResponse)
+async def read_index():
+    for path in ["index.html", "../index.html", "api/../index.html"]:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return f.read()
+    return "<h3>Velocity UI Error: index.html not found.</h3>"
+
+@app.get("/styles.css")
+async def read_css():
+    for path in ["styles.css", "../styles.css", "api/../styles.css"]:
+        if os.path.exists(path):
+            return FileResponse(path, media_type="text/css")
+    raise HTTPException(status_code=404, detail="styles.css not found")
+
+@app.get("/app.js")
+async def read_js():
+    for path in ["app.js", "../app.js", "api/../app.js"]:
+        if os.path.exists(path):
+            return FileResponse(path, media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="app.js not found")
